@@ -9,9 +9,8 @@
 namespace qianfan\consul;
 
 
-use SensioLabs\Consul\ServiceFactory;
-use SensioLabs\Consul\Services\Health;
-use SensioLabs\Consul\Services\HealthInterface;
+use DCarbone\PHPConsulAPI\Config;
+use DCarbone\PHPConsulAPI\Consul;
 use yii\base\Component;
 use yii\caching\Cache;
 use yii\di\Instance;
@@ -19,12 +18,24 @@ use yii\web\HttpException;
 
 class Client extends Component
 {
-    public $options;
+    public $address;
+
+    public $scheme;
+
+    public $datacenter;
+
+    public $httpAuth;
+
+    public $token;
+
+    public $tokenInHeader;
+
+    public $insecureSkipVerify;
 
     public $cacheComponent;
 
     /**
-     * @var ServiceFactory $_factory
+     * @var Consul $_factory
      */
     private $_factory;
 
@@ -37,26 +48,32 @@ class Client extends Component
     {
         parent::init();
 
-        $this->_factory = new ServiceFactory($this->options);
+        $config = new Config([
+            'Address' => $this->address,
+            'Scheme' => $this->scheme,
+            'Datacenter' => $this->datacenter,
+            // 'HttpAuth' => $this->httpAuth,
+            'Token' => $this->token,
+            'TokenInHeader' => $this->tokenInHeader,
+            'InsecureSkipVerify' => $this->insecureSkipVerify
+        ]);
+
+        $this->_factory = new Consul($config);
         $this->_cache = Instance::ensure($this->cacheComponent, Cache::class);
     }
 
-    public function discover($serviceName, $filter = [])
+    public function discover($serviceName, $tag = '', $passingOnly = true)
     {
         $cacheName = __METHOD__ . '::' . $serviceName;
         $services = $this->_cache->get($cacheName);
 
         if (!$services) {
-            /**
-             * @var Health $health
-             */
-            $health = $this->_factory->get(HealthInterface::class);
+            $health = $this->_factory->Health();
 
             if (!isset($filter['passing'])) {
                 $filter['passing'] = true;
             }
-            $result = $health->service($serviceName, $filter);
-            $services = $result->json();
+            list($services, $qm, $err) = $health->service($serviceName, $tag, $passingOnly);
 
             if ($services) {
                 $this->_cache->set($cacheName, $services, 600);
@@ -64,12 +81,12 @@ class Client extends Component
         }
 
         $result = null;
-        if (count($services) > 0) {
+        if ($services) {
             $k = array_rand($services);
             $service = $services[$k];
 
-            $url = $service['Service']['Address'] . ':' . $service['Service']['Port'];
 
+            $url = $service->Service->Address . ':' . $service->Service->Port;
             $result = [$url, $service];
         } else {
             throw new HttpException(404, "no available $serviceName service");

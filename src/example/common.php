@@ -38,8 +38,9 @@ $application = new yii\web\Application([
     ]
 ]);
 
-$sdk = new client([
-    'options' => [],
+$sdk = new Client([
+    'address' => '127.0.0.1:8500',
+    'scheme' => 'http',
     'cacheComponent' => 'cache'
 ]);
 
