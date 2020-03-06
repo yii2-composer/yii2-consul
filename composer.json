@@ -1,0 +1,26 @@
+{
+  "name": "qianfan/consul",
+  "description": "yii2 consul sdk",
+  "type": "yii2-extension",
+  "keywords": ["yii2","extension"],
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "liyifei",
+      "email": "119422342@qq.com"
+    }
+  ],
+  "require": {
+    "sensiolabs/consul-php-sdk": "^3.1",
+    "yiisoft/yii2": "*"
+  },
+  "autoload": {
+    "psr-4": {
+      "qianfan\\consul\\": "src"
+    }
+  },
+  "config": {
+    "process-timeout": 1800,
+    "secure-http": false
+  }
+}
