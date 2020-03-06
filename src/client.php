@@ -17,7 +17,7 @@ use yii\caching\Cache;
 use yii\di\Instance;
 use yii\web\HttpException;
 
-class client extends Component
+class Client extends Component
 {
     public $options;
 
